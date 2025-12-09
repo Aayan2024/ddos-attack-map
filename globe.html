@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live DDoS Attack Map</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #0a0e27;
+            color: #fff;
+            overflow: hidden;
+        }
+
+        /* Glassmorphism panels */
+        .info-panel {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(10, 14, 39, 0.85);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(0, 255, 136, 0.3);
+            padding: 25px;
+            border-radius: 15px;
+            max-width: 350px;
+            box-shadow: 0 8px 32px rgba(0, 255, 136, 0.15);
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        .info-panel h1 {
+            font-size: 26px;
+            margin-bottom: 8px;
+            color: #00ff88;
+            text-shadow: 0 0 15px rgba(0, 255, 136, 0.6);
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+
+        .info-panel p {
+            margin: 8px 0;
+            font-size: 13px;
+            color: #b0b8cc;
+            font-weight: 300;
+        }
+
+        .stats {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(0, 255, 136, 0.2);
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 12px 0;
+            font-size: 14px;
+            padding: 8px 0;
+            transition: all 0.3s ease;
+        }
+
+        .stat-item:hover {
+            transform: translateX(5px);
+        }
+
+        .stat-label {
+            color: #00ff88;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-value {
+            color: #fff;
+            font-size: 18px;
+            font-weight: 700;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+        }
+
+        .control-panel {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(10, 14, 39, 0.85);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(0, 255, 136, 0.3);
+            padding: 18px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 255, 136, 0.15);
+            animation: fadeIn 0.5s ease-in 0.2s both;
+        }
+
+        button {
+            background: linear-gradient(135deg, #00ff88 0%, #00cc66 100%);
+            color: #0a0e27;
+            border: none;
+            padding: 12px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 13px;
+            margin: 5px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 255, 136, 0.3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 255, 136, 0.5);
+            background: linear-gradient(135deg, #00ff99 0%, #00dd77 100%);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            background: linear-gradient(135deg, #555 0%, #444 100%);
+            cursor: not-allowed;
+            opacity: 0.6;
+            transform: none;
+            box-shadow: none;
+        }
+
+        #autoRefreshBtn.active {
+            background: linear-gradient(135deg, #ff4444 0%, #cc0000 100%);
+            box-shadow: 0 4px 15px rgba(255, 68, 68, 0.4);
+        }
+
+        #autoRefreshBtn.active:hover {
+            background: linear-gradient(135deg, #ff5555 0%, #dd1111 100%);
+        }
+
+        .attack-info {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(10, 14, 39, 0.9);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 68, 68, 0.4);
+            padding: 20px;
+            border-radius: 15px;
+            max-width: 320px;
+            box-shadow: 0 8px 32px rgba(255, 68, 68, 0.2);
+            display: none;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .attack-info.active {
+            display: block;
+        }
+
+        .attack-info h3 {
+            color: #ff4444;
+            margin-bottom: 12px;
+            font-size: 18px;
+            font-weight: 700;
+            text-shadow: 0 0 10px rgba(255, 68, 68, 0.5);
+        }
+
+        .attack-info p {
+            margin: 8px 0;
+            font-size: 13px;
+            color: #ccc;
+            line-height: 1.6;
+        }
+
+        .attack-info strong {
+            color: #00ff88;
+        }
+
+        .loading {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            color: #00ff88;
+            font-size: 13px;
+            padding: 10px 15px;
+            background: rgba(10, 14, 39, 0.8);
+            backdrop-filter: blur(10px);
+            border-radius: 8px;
+            border: 1px solid rgba(0, 255, 136, 0.3);
+            display: none;
+        }
+
+        .loading.active {
+            display: block;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        .loading.active::after {
+            content: '';
+            animation: dots 1.5s steps(4, end) infinite;
+        }
+
+        .debug-panel {
+            position: absolute;
+            bottom: 100px;
+            left: 20px;
+            background: rgba(10, 14, 39, 0.85);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 170, 0, 0.3);
+            padding: 12px;
+            border-radius: 10px;
+            max-width: 350px;
+            font-size: 11px;
+            color: #ffaa00;
+            max-height: 120px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            line-height: 1.5;
+            box-shadow: 0 4px 15px rgba(255, 170, 0, 0.1);
+        }
+
+        .debug-panel::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .debug-panel::-webkit-scrollbar-track {
+            background: rgba(255, 170, 0, 0.1);
+            border-radius: 3px;
+        }
+
+        .debug-panel::-webkit-scrollbar-thumb {
+            background: rgba(255, 170, 0, 0.4);
+            border-radius: 3px;
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.6;
+            }
+        }
+
+        @keyframes dots {
+            0%, 20% {
+                content: '';
+            }
+            40% {
+                content: '.';
+            }
+            60% {
+                content: '..';
+            }
+            80%, 100% {
+                content: '...';
+            }
+        }
+
+    </style>
+</head>
+<body>
+    <div class="info-panel">
+        <h1>🌍 DDoS Attack Map</h1>
+        <p>Real-time global attack visualization</p>
+        <div class="stats">
+            <div class="stat-item">
+                <span class="stat-label">Active Attacks:</span>
+                <span class="stat-value" id="attackCount">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Unique IPs:</span>
+                <span class="stat-value" id="ipCount">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Countries:</span>
+                <span class="stat-value" id="countryCount">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">ML High Risk:</span>
+                <span class="stat-value" id="mlHighRisk">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">FPS:</span>
+                <span class="stat-value" id="fps">60</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="attack-info" id="attackInfo">
+        <h3>Attack Details</h3>
+        <p><strong>IP:</strong> <span id="infoIP">N/A</span></p>
+        <p><strong>Location:</strong> <span id="infoLocation">N/A</span></p>
+        <p><strong>Country:</strong> <span id="infoCountry">N/A</span></p>
+        <p><strong>Organization:</strong> <span id="infoOrg">N/A</span></p>
+        <p><strong>Abuse Score:</strong> <span id="infoAbuse">N/A</span></p>
+        <p><strong>ML Risk:</strong> <span id="infoMLRisk">N/A</span></p>
+        <p><strong>ML Confidence:</strong> <span id="infoMLConf">N/A</span></p>
+    </div>
+
+    <div class="control-panel">
+        <button onclick="addRandomAttacks()" id="addBtn">Add Test Attacks</button>
+        <button onclick="fetchRealAttacks()" id="realBtn">Fetch Real Attacks</button>
+        <button onclick="fetchMLAttacks()" id="mlBtn">Fetch with ML Predictions</button>
+        <button onclick="toggleAutoRefresh()" id="autoRefreshBtn">Start Auto-Refresh</button>
+        <button onclick="clearAttacks()">Clear</button>
+    </div>
+
+    <div class="debug-panel" id="debugPanel"></div>
+
+    <div class="loading" id="loading">Fetching attack data</div>
+
+    <script>
+        // Debug logging
+        const debugLog = (msg) => {
+            console.log(msg);
+            const panel = document.getElementById('debugPanel');
+            const line = document.createElement('div');
+            line.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+            panel.appendChild(line);
+            panel.scrollTop = panel.scrollHeight;
+        };
+
+        debugLog('Page loaded, initializing Three.js...');
+
+        // Three.js Setup
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 10000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setClearColor(0x0a0e27);
+        document.body.appendChild(renderer.domElement);
+
+        camera.position.z = 2.5;
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.minDistance = 1.5;  // Minimum zoom
+        controls.maxDistance = 5;    // Maximum zoom
+        controls.enablePan = false;   // Disable panning (only rotate and zoom)
+        controls.autoRotate = false;  // Disable auto-rotation (we control manually)
+
+        debugLog('Orbit controls added');
+
+        // Create Globe with better visibility
+        // Create Globe with Earth texture
+        const globeGeometry = new THREE.SphereGeometry(1, 64, 64);
+
+        // Load Earth texture
+        const textureLoader = new THREE.TextureLoader();
+        const earthTexture = textureLoader.load(
+            'https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/planets/earth_atmos_2048.jpg',
+            function() {
+                debugLog('Earth texture loaded successfully');
+            },
+            undefined,
+            function(error) {
+                debugLog('Error loading texture: ' + error);
+            }
+        );
+
+        const globeMaterial = new THREE.MeshPhongMaterial({
+            map: earthTexture,
+            shininess: 10,
+            emissive: 0x112244,
+            emissiveIntensity: 0.1
+        });
+
+        const globe = new THREE.Mesh(globeGeometry, globeMaterial);
+        scene.add(globe);
+
+        debugLog('Globe created with texture');
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        directionalLight.position.set(5, 3, 5);
+        scene.add(directionalLight);
+
+        // Stars background
+        function createStars() {
+            const starGeometry = new THREE.BufferGeometry();
+            const starCount = 1000;
+            const positions = new Float32Array(starCount * 3);
+
+            for (let i = 0; i < starCount * 3; i += 3) {
+                positions[i] = (Math.random() - 0.5) * 200;
+                positions[i + 1] = (Math.random() - 0.5) * 200;
+                positions[i + 2] = (Math.random() - 0.5) * 200;
+            }
+
+            starGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            const starMaterial = new THREE.PointsMaterial({ color: 0xffffff, size: 0.1 });
+            const stars = new THREE.Points(starGeometry, starMaterial);
+            scene.add(stars);
+        }
+        createStars();
+        debugLog('Stars created');
+
+        // Attack data storage
+        let attacks = [];
+        let attackMeshes = [];
+        const API_BASE = 'http://127.0.0.1:8000';
+
+        // Convert lat/long to 3D coordinates on sphere
+        function latLngToXYZ(lat, lng, radius = 1.02) {
+            const phi = (90 - lat) * Math.PI / 180;
+            const theta = (lng + 180) * Math.PI / 180;
+
+            const x = -radius * Math.sin(phi) * Math.cos(theta);
+            const y = radius * Math.cos(phi);
+            const z = radius * Math.sin(phi) * Math.sin(theta);
+
+            return new THREE.Vector3(x, y, z);
+        }
+
+        // Add attack point on globe
+        // Add attack point on globe
+        // Add attack point on globe with beam effect
+        function addAttackPoint(data) {
+            // Add small random offset to prevent overlapping dots
+            const offset = 0.5 * (Math.random() - 0.5);
+            const sourcePos = latLngToXYZ(data.latitude + offset, data.longitude + offset);
+
+            // Color based on abuse confidence score
+            let color = 0xff4444;
+            let glowColor = 0xff0000;
+            
+            if (data.abuseConfidence) {
+                if (data.abuseConfidence >= 95) {
+                    color = 0xff0000;
+                    glowColor = 0xff0000;
+                } else if (data.abuseConfidence >= 90) {
+                    color = 0xff4444;
+                    glowColor = 0xff0000;
+                } else if (data.abuseConfidence >= 75) {
+                    color = 0xff8800;
+                    glowColor = 0xff6600;
+                } else {
+                    color = 0xffaa00;
+                    glowColor = 0xff8800;
+                }
+            }
+
+            // Create main attack sphere
+            const geometry = new THREE.SphereGeometry(0.03, 16, 16);
+            const material = new THREE.MeshBasicMaterial({
+                color: color,
+                emissive: glowColor
+            });
+            const mesh = new THREE.Mesh(geometry, material);
+            mesh.position.copy(sourcePos);
+            mesh.userData = data;
+
+            // Add glow effect
+            const glowGeometry = new THREE.SphereGeometry(0.05, 8, 8);
+            const glowMaterial = new THREE.MeshBasicMaterial({
+                color: color,
+                transparent: true,
+                opacity: 0.3
+            });
+            const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+            glow.position.copy(sourcePos);
+
+            // Create expanding ring effect (attack pulse)
+            const ringGeometry = new THREE.RingGeometry(0.05, 0.08, 32);
+            const ringMaterial = new THREE.MeshBasicMaterial({
+                color: color,
+                transparent: true,
+                opacity: 0.6,
+                side: THREE.DoubleSide
+            });
+            const ring = new THREE.Mesh(ringGeometry, ringMaterial);
+            ring.position.copy(sourcePos);
+            
+            // Orient ring to face outward from globe center
+            ring.lookAt(new THREE.Vector3(0, 0, 0));
+
+            // Create vertical beam shooting up from attack point
+            const beamHeight = 0.5;
+            const beamGeometry = new THREE.CylinderGeometry(0.01, 0.02, beamHeight, 8);
+            const beamMaterial = new THREE.MeshBasicMaterial({
+                color: color,
+                transparent: true,
+                opacity: 0.7,
+                emissive: glowColor,
+                emissiveIntensity: 0.5
+            });
+            const beam = new THREE.Mesh(beamGeometry, beamMaterial);
+            
+            // Position beam above the attack point
+            const beamPos = sourcePos.clone().multiplyScalar(1 + beamHeight / 2);
+            beam.position.copy(beamPos);
+            beam.lookAt(new THREE.Vector3(0, 0, 0));
+            beam.rotateX(Math.PI / 2);
+
+            scene.add(mesh);
+            scene.add(glow);
+            scene.add(ring);
+            scene.add(beam);
+
+            attackMeshes.push({ 
+                mesh, 
+                glow, 
+                ring, 
+                beam,
+                data,
+                spawnTime: Date.now()
+            });
+            attacks.push(data);
+
+            debugLog(`Added attack: ${data.ip} at ${data.city}, ${data.country} [Confidence: ${data.abuseConfidence || 'N/A'}%]`);
+
+            updateStats();
+        }
+
+        // Fetch geolocation for IP
+        async function getGeolocation(ip) {
+            try {
+                debugLog(`Fetching geolocation for ${ip}...`);
+                const response = await fetch(`${API_BASE}/geolocate/${ip}`);
+                const data = await response.json();
+                
+                if (data.error) {
+                    debugLog(`Error for ${ip}: ${data.error}`);
+                    return null;
+                }
+                
+                debugLog(`Got geolocation for ${ip}: ${data.city}`);
+                return data;
+            } catch (error) {
+                debugLog(`Fetch error for ${ip}: ${error.message}`);
+                console.error('Error fetching geolocation:', error);
+                return null;
+            }
+        }
+
+        // Add random attacks (for testing)
+        async function addRandomAttacks() {
+            const testIPs = [
+                '8.8.8.8',           // Google - USA (Mountain View)
+                '1.1.1.1',           // Cloudflare - Hong Kong
+                '77.88.8.8',         // Yandex - Russia
+                '180.76.76.76',      // Baidu - China
+                '200.221.11.101',    // Brazil
+                '41.203.245.222',    // South Africa
+                '103.28.248.1',      // India
+                '139.130.4.5',       // Australia
+                '185.51.200.2',      // Germany
+                '208.67.222.222'     // OpenDNS - USA
+            ];
+
+            document.getElementById('addBtn').disabled = true;
+            document.getElementById('loading').classList.add('active');
+            debugLog('Starting to add random attacks...');
+
+            let successCount = 0;
+            for (const ip of testIPs) {
+                const data = await getGeolocation(ip);
+                if (data && !data.error) {
+                    addAttackPoint(data);
+                    successCount++;
+                }
+            }
+
+            document.getElementById('addBtn').disabled = false;
+            document.getElementById('loading').classList.remove('active');
+            debugLog(`Added ${successCount}/${testIPs.length} attacks`);
+        }
+
+        // Fetch real DDoS attacks from AbuseIPDB
+        async function fetchRealAttacks() {
+            document.getElementById('realBtn').disabled = true;
+            document.getElementById('loading').classList.add('active');
+            debugLog('Fetching real DDoS attacks from AbuseIPDB...');
+
+            try {
+                const response = await fetch(`${API_BASE}/fetch-attacks?limit=20`);
+                const data = await response.json();
+                
+                if (data.success && data.attacks) {
+                    debugLog(`Received ${data.count} real attack IPs`);
+                    
+                    for (const attackData of data.attacks) {
+                        addAttackPoint(attackData);
+                    }
+                    
+                    debugLog(`Added ${data.count} real attacks to globe`);
+                } else {
+                    debugLog(`Error: ${data.error || 'Unknown error'}`);
+                }
+            } catch (error) {
+                debugLog(`Fetch error: ${error.message}`);
+            }
+
+            document.getElementById('realBtn').disabled = false;
+            document.getElementById('loading').classList.remove('active');
+        }
+
+        // Fetch real DDoS attacks with ML predictions
+        async function fetchMLAttacks() {
+            document.getElementById('mlBtn').disabled = true;
+            document.getElementById('loading').classList.add('active');
+            debugLog('Fetching attacks with ML predictions...');
+
+            try {
+                const response = await fetch(`${API_BASE}/fetch-attacks-ml?limit=20`);
+                const data = await response.json();
+                
+                if (data.success && data.attacks) {
+                    debugLog(`Received ${data.count} attacks with ML predictions`);
+                    
+                    for (const attackData of data.attacks) {
+                        addAttackPoint(attackData);
+                        
+                        // Log ML prediction
+                        if (attackData.ml_prediction) {
+                            const mlPred = attackData.ml_prediction;
+                            debugLog(`ML: ${attackData.ip} - ${mlPred.risk_level} risk (${mlPred.confidence.toFixed(1)}%)`);
+                        }
+                    }
+                    
+                    debugLog(`Added ${data.count} attacks with ML analysis`);
+                } else {
+                    debugLog(`Error: ${data.error || 'Unknown error'}`);
+                }
+            } catch (error) {
+                debugLog(`Fetch error: ${error.message}`);
+            }
+
+            document.getElementById('mlBtn').disabled = false;
+            document.getElementById('loading').classList.remove('active');
+        }
+
+        // Clear all attacks
+        function clearAttacks() {
+            attackMeshes.forEach(({ mesh, glow, ring, beam }) => {
+                scene.remove(mesh);
+                scene.remove(glow);
+                if (ring) scene.remove(ring);
+                if (beam) scene.remove(beam);
+            });
+            attackMeshes = [];
+            attacks = [];
+            updateStats();
+            debugLog('Cleared all attacks');
+        }
+
+        // Update statistics
+        // Update statistics
+        function updateStats() {
+            document.getElementById('attackCount').textContent = attacks.length;
+            document.getElementById('ipCount').textContent = new Set(attacks.map(a => a.ip)).size;
+
+            const countries = new Set(attacks.map(a => a.country));
+            document.getElementById('countryCount').textContent = countries.size;
+            
+            // Count ML high-risk attacks
+            const mlHighRisk = attacks.filter(a => 
+                a.ml_prediction && a.ml_prediction.risk_level === 'High'
+            ).length;
+            document.getElementById('mlHighRisk').textContent = mlHighRisk;
+        }
+
+        // Mouse interaction
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+
+        window.addEventListener('mousemove', (event) => {
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+
+            const meshesToCheck = attackMeshes.map(a => a.mesh);
+            const intersects = raycaster.intersectObjects(meshesToCheck);
+
+            if (intersects.length > 0) {
+                const data = intersects[0].object.userData;
+                document.getElementById('infoIP').textContent = data.ip;
+                document.getElementById('infoLocation').textContent = `${data.city}, ${data.region}`;
+                document.getElementById('infoCountry').textContent = data.country;
+                document.getElementById('infoOrg').textContent = data.org;
+                document.getElementById('infoAbuse').textContent = data.abuseConfidence ? `${data.abuseConfidence}%` : 'N/A';
+                
+                // Show ML prediction if available
+                if (data.ml_prediction) {
+                    document.getElementById('infoMLRisk').textContent = data.ml_prediction.risk_level || 'N/A';
+                    document.getElementById('infoMLConf').textContent = data.ml_prediction.confidence ? 
+                        `${data.ml_prediction.confidence.toFixed(1)}%` : 'N/A';
+                } else {
+                    document.getElementById('infoMLRisk').textContent = 'N/A';
+                    document.getElementById('infoMLConf').textContent = 'N/A';
+                }
+                
+                document.getElementById('attackInfo').classList.add('active');
+            } else {
+                document.getElementById('attackInfo').classList.remove('active');
+            }
+        });
+
+        // Animation loop
+        let frameCount = 0;
+        let lastTime = Date.now();
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Rotate globe
+            globe.rotation.y += 0.0002;
+            
+            // Update orbit controls
+            controls.update();
+
+            // Pulse glow effect
+            attackMeshes.forEach(({ glow, ring, beam, spawnTime }, index) => {
+                const age = (Date.now() - spawnTime) / 1000; // Age in seconds
+                
+                // Pulsing glow
+                const pulse = Math.sin(Date.now() * 0.003 + index) * 0.02 + 0.05;
+                glow.scale.set(pulse * 3, pulse * 3, pulse * 3);
+                
+                // Expanding ring effect
+                if (ring) {
+                    const ringScale = 1 + (age % 2) * 2; // Expands over 2 seconds then resets
+                    ring.scale.set(ringScale, ringScale, 1);
+                    ring.material.opacity = Math.max(0, 0.6 - (age % 2) * 0.3);
+                }
+                
+                // Pulsing beam
+                if (beam) {
+                    beam.material.opacity = 0.4 + Math.sin(Date.now() * 0.005 + index) * 0.3;
+                }
+            });
+            renderer.render(scene, camera);
+            // FPS counter
+            frameCount++;
+            const currentTime = Date.now();
+            if (currentTime - lastTime >= 1000) {
+                document.getElementById('fps').textContent = frameCount;
+                frameCount = 0;
+                lastTime = currentTime;
+            }
+        }
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        animate();
+        debugLog('Animation loop started');
+
+        // Auto-add some test attacks on load
+        setTimeout(() => {
+            debugLog('Auto-loading initial attacks...');
+            addRandomAttacks();
+        }, 500);
+
+        let autoRefreshInterval = null;
+        let isAutoRefreshEnabled = false;
+
+        function toggleAutoRefresh() {
+            if (isAutoRefreshEnabled) {
+                // Stop auto-refresh
+                clearInterval(autoRefreshInterval);
+                isAutoRefreshEnabled = false;
+                document.getElementById('autoRefreshBtn').textContent = 'Start Auto-Refresh';
+                document.getElementById('autoRefreshBtn').style.background = '#00ff88';
+                debugLog('Auto-refresh stopped');
+            } else {
+                // Start auto-refresh
+                isAutoRefreshEnabled = true;
+                document.getElementById('autoRefreshBtn').textContent = 'Stop Auto-Refresh';
+                document.getElementById('autoRefreshBtn').style.background = '#ff4444';
+                debugLog('Auto-refresh started (every 60s)');
+                
+                autoRefreshInterval = setInterval(() => {
+                    debugLog('Auto-refresh: Clearing old attacks...');
+                    clearAttacks();
+                    debugLog('Auto-refresh: Fetching new attacks...');
+                    fetchRealAttacks();
+                }, 300000); // 60 seconds
+            }
+        }
+    </script>
+</body>
+</html>
