@@ -57,6 +57,11 @@ async def root():
 
 @app.get("/geolocate/{ip_address}")
 async def geolocate(ip_address: str):
+    try:
+        ip_address = str(ipaddress.ip_address(ip_address))
+    except ValueError:
+        raise HTTPException(status_code=422, detail="Invalid IP address")
+        
     """
     Fetch geolocation data for a given IP address.
     Uses ipinfo.io API (free tier: 50k requests/month).
@@ -64,8 +69,9 @@ async def geolocate(ip_address: str):
     
     # Check cache first
     if ip_address in geo_cache:
-        print(f"Cache hit for {ip_address}")
-        return geo_cache[ip_address]
+        result = dict(geo_cache[ip_address])
+        result["cached"] = True
+        return result
     
     try:
         # Fetch from ipinfo.io (free API)
