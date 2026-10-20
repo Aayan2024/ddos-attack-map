@@ -14,19 +14,26 @@ import numpy as np
 from pathlib import Path
 
 app = FastAPI()
+BASE_DIR = Path(__file__).resolve().parent
+
+initialize_database()
+app.include_router(reporting_router)
 
 # Enable CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
+    allow_origins=[
+        "http://127.0.0.1:5500",
+        "http://localhost:5500",
+    ],
+    allow_credentials=False,
+    allow_methods=["GET"],
     allow_headers=["*"],
 )
 
 # Simple in-memory cache for geolocation data
 geo_cache = {}
-CACHE_FILE = "geo_cache.json"
+CACHE_FILE = BASE_DIR / "geo_cache.json"
 
 def load_cache():
     """Load cache from file on startup"""
@@ -119,7 +126,7 @@ async def cache_stats():
     """Get cache statistics"""
     return {
         "cached_ips": len(geo_cache),
-        "cache_file": CACHE_FILE,
+        "cache_file": str(CACHE_FILE),
         "sample_ips": list(geo_cache.keys())[:10]
     }
 
@@ -318,8 +325,8 @@ async def check_ip(ip_address: str):
             "error": f"Failed to check IP: {str(e)}"
         }
     
-MODEL_PATH = Path("ddos_model.pkl")
-ENCODER_PATH = Path("country_encoder.pkl")
+MODEL_PATH = BASE_DIR / "ddos_model.pkl"
+ENCODER_PATH = BASE_DIR / "country_encoder.pkl"
 
 ml_model = None
 country_encoder = None
