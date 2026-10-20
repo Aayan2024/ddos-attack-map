@@ -1,4 +1,9 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException, Query
+from fastapi.responses import FileResponse
+import ipaddress
+
+from backend.history import initialize_database, record_collection
+from backend.reporting import router as reporting_router
 import httpx
 from typing import Optional
 import json
