@@ -1,4 +1,5 @@
 from contextlib import asynccontextmanager
+from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 import asyncio
 import ipaddress
@@ -24,6 +25,12 @@ from backend.reporting import router as reporting_router
 # ---------------------------------------------------------
 
 BASE_DIR = Path(__file__).resolve().parent
+
+app.mount(
+    "/static",
+    StaticFiles(directory=BASE_DIR / "frontend"),
+    name="static",
+)
 
 CACHE_FILE = BASE_DIR / "geo_cache.json"
 MODEL_PATH = BASE_DIR / "ddos_model.pkl"
@@ -577,18 +584,6 @@ async def fetch_indicator_collection(limit: int):
 # Basic and frontend routes
 # ---------------------------------------------------------
 
-@app.get("/")
-async def root():
-    return {
-        "message": "Cyber intelligence API is running",
-        "globe": "/globe",
-        "docs": "/docs",
-        "history": "/api/observations",
-        "report": "/api/reports/weekly.xlsx",
-        "ml_enabled": ml_model is not None,
-    }
-
-
 @app.get("/globe", include_in_schema=False)
 async def globe_page():
     path = BASE_DIR / "globe.html"
@@ -600,7 +595,17 @@ async def globe_page():
         )
 
     return FileResponse(path)
-
+    
+@app.get("/")
+async def root():
+    return {
+        "message": "Cyber intelligence API is running",
+        "globe": "/globe",
+        "docs": "/docs",
+        "history": "/api/observations",
+        "report": "/api/reports/weekly.xlsx",
+        "ml_enabled": ml_model is not None,
+    }
 
 # ---------------------------------------------------------
 # Geolocation routes
