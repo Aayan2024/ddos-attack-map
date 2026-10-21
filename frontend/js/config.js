@@ -16,9 +16,10 @@ export const CONFIG = Object.freeze({
         'https://cdn.jsdelivr.net/npm/three@0.128.0/' +
         'examples/js/controls/OrbitControls.js',
 
+    
     EARTH_TEXTURE_URL:
-        'https://cdn.jsdelivr.net/npm/three@0.128.0/' +
-        'examples/textures/planets/earth_atmos_2048.jpg',
+        'https://cdn.jsdelivr.net/npm/three-globe@2.18.8/' +
+        'example/img/earth-blue-marble.jpg',
 
     SAMPLE_IPS: Object.freeze([
         '8.8.8.8',
