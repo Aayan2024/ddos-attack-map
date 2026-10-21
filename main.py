@@ -13,7 +13,7 @@ import joblib
 import numpy as np
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, RedirectResponse
 from starlette.concurrency import run_in_threadpool
 
 from backend.history import initialize_database, record_collection
@@ -596,8 +596,12 @@ async def globe_page():
 
     return FileResponse(path)
     
-@app.get("/")
+@app.get("/", include_in_schema=False)
 async def root():
+    return RedirectResponse(url="/globe", status_code=307)
+
+@app.get("/health")
+async def health():
     return {
         "message": "Cyber intelligence API is running",
         "globe": "/globe",
