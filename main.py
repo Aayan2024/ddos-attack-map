@@ -26,12 +26,6 @@ from backend.reporting import router as reporting_router
 
 BASE_DIR = Path(__file__).resolve().parent
 
-app.mount(
-    "/static",
-    StaticFiles(directory=BASE_DIR / "frontend"),
-    name="static",
-)
-
 CACHE_FILE = BASE_DIR / "geo_cache.json"
 MODEL_PATH = BASE_DIR / "ddos_model.pkl"
 ENCODER_PATH = BASE_DIR / "country_encoder.pkl"
@@ -353,6 +347,12 @@ app = FastAPI(
     title="Cyber Intelligence Observatory API",
     version="0.2.0",
     lifespan=lifespan,
+)
+
+app.mount(
+    "/static",
+    StaticFiles(directory=BASE_DIR / "frontend"),
+    name="static",
 )
 
 app.add_middleware(
