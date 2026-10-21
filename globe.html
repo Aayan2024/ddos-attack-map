@@ -2,426 +2,40 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
     <title>Cyber Intelligence Observatory</title>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <link rel="stylesheet" href="/static/css/styles.css">
 
-    <style>
-        :root {
-            color-scheme: dark;
-            --background: #080d1c;
-            --panel: rgba(11, 19, 39, 0.94);
-            --border: rgba(98, 150, 210, 0.28);
-            --accent: #56e0b2;
-            --text: #e4ecfa;
-            --muted: #9aabc4;
-            --danger: #ff6577;
-            --sample: #57bdff;
-        }
+    <script
+        defer
+        src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js">
+    </script>
 
-        * {
-            box-sizing: border-box;
-        }
+    <script
+        defer
+        src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js">
+    </script>
 
-        body {
-            margin: 0;
-            overflow: hidden;
-            background: var(--background);
-            color: var(--text);
-            font-family: "Segoe UI", Arial, sans-serif;
-        }
-
-        button, input {
-            font: inherit;
-        }
-
-        button, a {
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        #globeCanvas {
-            position: fixed;
-            inset: 0;
-            display: block;
-            width: 100%;
-            height: 100%;
-            z-index: 0;
-        }
-
-        .panel {
-            position: fixed;
-            z-index: 2;
-            background: var(--panel);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            box-shadow: 0 14px 45px rgba(0, 0, 0, 0.3);
-            backdrop-filter: blur(12px);
-        }
-
-        .overview {
-            top: 18px;
-            left: 18px;
-            width: 310px;
-            padding: 20px;
-            max-height: calc(100vh - 220px);
-            overflow-y: auto;
-        }
-
-        h1 {
-            margin: 0 0 8px;
-            font-size: 22px;
-            line-height: 1.2;
-            color: var(--accent);
-        }
-
-        h2 {
-            margin: 0;
-            font-size: 17px;
-        }
-
-        p {
-            line-height: 1.5;
-        }
-
-        .subtitle, .muted {
-            color: var(--muted);
-        }
-
-        .subtitle {
-            margin: 0 0 15px;
-            font-size: 12px;
-        }
-
-        .status-line {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 16px;
-            font-size: 12px;
-            color: var(--muted);
-        }
-
-        #connectionDot {
-            width: 9px;
-            height: 9px;
-            border-radius: 50%;
-            background: #e4b356;
-            flex: 0 0 auto;
-        }
-
-        .stats {
-            border-top: 1px solid var(--border);
-            padding-top: 10px;
-        }
-
-        .stat {
-            display: flex;
-            justify-content: space-between;
-            gap: 12px;
-            padding: 7px 0;
-            font-size: 13px;
-        }
-
-        .stat span:first-child {
-            color: var(--muted);
-        }
-
-        .stat span:last-child {
-            font-weight: 600;
-        }
-
-        .legend {
-            margin-top: 14px;
-            padding-top: 12px;
-            border-top: 1px solid var(--border);
-            font-size: 12px;
-        }
-
-        .legend-row {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin: 8px 0;
-        }
-
-        .swatch {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            flex: 0 0 auto;
-        }
-
-        .notice {
-            font-size: 11px;
-            color: var(--muted);
-            margin-bottom: 0;
-        }
-
-        .controls {
-            left: 18px;
-            bottom: 18px;
-            right: 18px;
-            padding: 12px;
-        }
-
-        .control-row {
-            display: flex;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 8px;
-        }
-
-        button, .link-button {
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 10px 13px;
-            background: #182740;
-            color: var(--text);
-            cursor: pointer;
-            text-decoration: none;
-            font-size: 12px;
-            font-weight: 600;
-            transition: background 0.15s, transform 0.15s;
-        }
-
-        button:hover:not(:disabled), .link-button:hover {
-            background: #223a5b;
-            transform: translateY(-1px);
-        }
-
-        button:focus-visible, a:focus-visible, input:focus-visible {
-            outline: 2px solid var(--accent);
-            outline-offset: 3px;
-        }
-
-        button:disabled {
-            opacity: 0.45;
-            cursor: wait;
-        }
-
-        button.primary {
-            background: #164d40;
-            border-color: #2c8e72;
-            color: #b6ffe1;
-        }
-
-        button.active {
-            background: #592b39;
-            border-color: #c5576d;
-        }
-
-        .report-control {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .report-control label {
-            font-size: 12px;
-            color: var(--muted);
-        }
-
-        #reportDays {
-            width: 58px;
-            background: #0b1528;
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            color: var(--text);
-            padding: 9px 5px;
-        }
-
-        #operationStatus {
-            margin: 10px 3px 0;
-            min-height: 18px;
-            font-size: 12px;
-            color: var(--muted);
-        }
-
-        .details {
-            right: 18px;
-            top: 18px;
-            width: 330px;
-            padding: 18px;
-            max-height: calc(100vh - 210px);
-            overflow-y: auto;
-        }
-
-        .details[hidden] {
-            display: none;
-        }
-
-        .details-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 10px;
-            margin-bottom: 12px;
-        }
-
-        .details-header button {
-            padding: 5px 9px;
-        }
-
-        .detail-row {
-            display: grid;
-            grid-template-columns: 95px 1fr;
-            gap: 10px;
-            padding: 8px 0;
-            border-bottom: 1px solid rgba(98, 150, 210, 0.1);
-            font-size: 12px;
-        }
-
-        .detail-row .label {
-            color: var(--muted);
-        }
-
-        .detail-row .value {
-            overflow-wrap: anywhere;
-        }
-
-        .badge {
-            display: inline-block;
-            font-size: 11px;
-            padding: 5px 8px;
-            border-radius: 6px;
-            margin-bottom: 8px;
-            background: #223550;
-            color: #c2e5ff;
-        }
-
-        #mlWarning {
-            color: #e7bc73;
-            font-size: 11px;
-        }
-
-        .log-panel {
-            left: 18px;
-            bottom: 155px;
-            width: 360px;
-            max-width: calc(100vw - 36px);
-            padding: 12px;
-        }
-
-        .log-panel summary {
-            cursor: pointer;
-            font-size: 12px;
-            color: var(--muted);
-        }
-
-        #debugPanel {
-            margin-top: 10px;
-            max-height: 125px;
-            overflow: auto;
-            font-family: Consolas, monospace;
-            font-size: 11px;
-            line-height: 1.6;
-            color: #b5c9e5;
-        }
-
-        .log-error {
-            color: #ff9ba8;
-        }
-
-        .view-hint {
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 1;
-            font-size: 12px;
-            text-align: center;
-            color: var(--muted);
-            pointer-events: none;
-        }
-
-        #fatalError {
-            position: fixed;
-            inset: 25% 15%;
-            z-index: 10;
-            background: #251a28;
-            border: 1px solid var(--danger);
-            border-radius: 14px;
-            padding: 25px;
-            line-height: 1.7;
-            overflow: auto;
-        }
-
-        #fatalError[hidden] {
-            display: none;
-        }
-
-        @media (max-width: 1050px) {
-            .overview {
-                width: 255px;
-            }
-
-            .details {
-                width: 285px;
-            }
-
-            .view-hint {
-                display: none;
-            }
-
-            .log-panel {
-                bottom: 190px;
-            }
-        }
-
-        @media (max-width: 680px) {
-            .overview {
-                top: 10px;
-                left: 10px;
-                width: 220px;
-                padding: 13px;
-                max-height: 43vh;
-            }
-
-            h1 {
-                font-size: 18px;
-            }
-
-            .legend, .overview .notice {
-                display: none;
-            }
-
-            .details {
-                top: 10px;
-                right: 10px;
-                width: min(310px, calc(100vw - 20px));
-                max-height: 53vh;
-                z-index: 4;
-            }
-
-            .controls {
-                left: 10px;
-                right: 10px;
-                bottom: 10px;
-                padding: 9px;
-                max-height: 35vh;
-                overflow: auto;
-            }
-
-            button, .link-button {
-                padding: 9px;
-                font-size: 11px;
-            }
-
-            .log-panel {
-                display: none;
-            }
-        }
-    </style>
+    <script defer src="/static/js/app.js"></script>
 </head>
 
 <body>
-    <canvas id="globeCanvas" aria-label="Interactive intelligence globe"></canvas>
+    <canvas
+        id="globeCanvas"
+        aria-label="Interactive intelligence globe">
+    </canvas>
 
     <section class="panel overview">
         <h1>Cyber Intelligence Observatory</h1>
-        <p class="subtitle">Reported IP intelligence · approximate geography</p>
+
+        <p class="subtitle">
+            Reported IP intelligence · approximate geography
+        </p>
 
         <div class="status-line">
             <span id="connectionDot"></span>
@@ -433,34 +47,42 @@
                 <span>Displayed markers</span>
                 <span id="markerCount">0</span>
             </div>
+
             <div class="stat">
                 <span>Reported indicators</span>
                 <span id="indicatorCount">0</span>
             </div>
+
             <div class="stat">
                 <span>Location samples</span>
                 <span id="sampleCount">0</span>
             </div>
+
             <div class="stat">
                 <span>Countries represented</span>
                 <span id="countryCount">0</span>
             </div>
+
             <div class="stat">
                 <span>Experimental ML high</span>
                 <span id="mlHighRisk">0</span>
             </div>
+
             <div class="stat">
                 <span>Stored observations · 7d</span>
                 <span id="historyCount">—</span>
             </div>
+
             <div class="stat">
                 <span>Stored unique IPs · 7d</span>
                 <span id="historyUnique">—</span>
             </div>
+
             <div class="stat">
                 <span>Last live collection</span>
                 <span id="lastCollection">—</span>
             </div>
+
             <div class="stat">
                 <span>FPS</span>
                 <span id="fps">—</span>
@@ -469,26 +91,35 @@
 
         <div class="legend">
             <div class="legend-row">
-                <span class="swatch" style="background:#ff4564"></span>
+                <span class="swatch score-critical"></span>
                 <span>Reputation score 95–100</span>
             </div>
+
             <div class="legend-row">
-                <span class="swatch" style="background:#ff8651"></span>
+                <span class="swatch score-high"></span>
                 <span>Reputation score 90–94</span>
             </div>
+
             <div class="legend-row">
-                <span class="swatch" style="background:#f5c65d"></span>
+                <span class="swatch score-other"></span>
                 <span>Reputation score below 90</span>
             </div>
+
             <div class="legend-row">
-                <span class="swatch" style="background:#57bdff"></span>
+                <span class="swatch score-unknown"></span>
+                <span>Reputation unavailable</span>
+            </div>
+
+            <div class="legend-row">
+                <span class="swatch location-sample"></span>
                 <span>Location sample · not a threat finding</span>
             </div>
         </div>
 
         <p class="notice">
-            Markers are not confirmed active DDoS attacks. IP locations are
-            approximate. Repeated collection does not establish repeated attacks.
+            Markers are not confirmed active DDoS attacks.
+            IP locations are approximate. Repeated collection
+            does not establish repeated attacks.
         </p>
     </section>
 
@@ -499,7 +130,11 @@
     <aside class="panel details" id="detailsPanel" hidden>
         <div class="details-header">
             <h2>Indicator details</h2>
-            <button id="closeDetailsBtn" type="button" aria-label="Close details">
+
+            <button
+                id="closeDetailsBtn"
+                type="button"
+                aria-label="Close details">
                 ✕
             </button>
         </div>
@@ -510,51 +145,61 @@
             <span class="label">IP</span>
             <span class="value" id="infoIP"></span>
         </div>
+
         <div class="detail-row">
             <span class="label">City / region</span>
             <span class="value" id="infoLocation"></span>
         </div>
+
         <div class="detail-row">
             <span class="label">Country</span>
             <span class="value" id="infoCountry"></span>
         </div>
+
         <div class="detail-row">
             <span class="label">Organization</span>
             <span class="value" id="infoOrg"></span>
         </div>
+
         <div class="detail-row">
             <span class="label">Coordinates</span>
             <span class="value" id="infoCoordinates"></span>
         </div>
+
         <div class="detail-row">
             <span class="label">Timezone</span>
             <span class="value" id="infoTimezone"></span>
         </div>
+
         <div class="detail-row">
             <span class="label">Reputation</span>
             <span class="value" id="infoAbuse"></span>
         </div>
+
         <div class="detail-row">
             <span class="label">Collected UTC</span>
             <span class="value" id="infoObserved"></span>
         </div>
+
         <div class="detail-row">
             <span class="label">ML category</span>
             <span class="value" id="infoMLRisk"></span>
         </div>
+
         <div class="detail-row">
             <span class="label">ML score</span>
             <span class="value" id="infoMLConf"></span>
         </div>
 
         <p id="mlWarning" hidden>
-            Experimental legacy model: this score reflects a model trained
-            on a reputation threshold, not validated DDoS probability.
+            Experimental legacy model: this score reflects a model
+            trained on a reputation threshold, not validated DDoS
+            probability.
         </p>
 
         <p class="notice">
-            A network association or reputation report does not prove that
-            an organization, datacenter, or device is compromised.
+            A network association or reputation report does not prove
+            that an organization, datacenter, or device is compromised.
         </p>
     </aside>
 
@@ -569,7 +214,11 @@
                 Add Location Samples
             </button>
 
-            <button id="fetchBtn" type="button" class="primary" data-data-action>
+            <button
+                id="fetchBtn"
+                type="button"
+                class="primary"
+                data-data-action>
                 Collect Indicators
             </button>
 
@@ -591,6 +240,7 @@
 
             <div class="report-control">
                 <label for="reportDays">Report days</label>
+
                 <input
                     id="reportDays"
                     type="number"
@@ -599,1246 +249,29 @@
                     max="90"
                     step="1"
                 >
+
                 <button id="reportBtn" type="button">
                     Download XLSX
                 </button>
             </div>
 
-            <a class="link-button" href="/docs" target="_blank" rel="noopener">
+            <a
+                class="link-button"
+                href="/docs"
+                target="_blank"
+                rel="noopener">
                 API Docs
             </a>
         </div>
 
-        <div id="operationStatus" role="status" aria-live="polite">
-            Ready. No location samples or live indicators are loaded automatically.
+        <div
+            id="operationStatus"
+            role="status"
+            aria-live="polite">
+            Ready. No samples or live indicators load automatically.
         </div>
     </section>
 
     <div id="fatalError" role="alert" hidden></div>
-
-    <script>
-        'use strict';
-
-        // --------------------------------------------------
-        // Configuration and state
-        // --------------------------------------------------
-
-        // Open this file through FastAPI at /globe.
-        const API_BASE = window.location.origin;
-        const AUTO_REFRESH_MS = 300000;
-
-        const markerEntries = new Map();
-        const selectableMeshes = [];
-
-        let scene;
-        let camera;
-        let renderer;
-        let controls;
-        let earth;
-
-        let dataBusy = false;
-        let reportBusy = false;
-        let autoRefreshTimer = null;
-        let pinnedIP = null;
-        let displayedDetailsIP = null;
-
-        let hoveredMesh = null;
-        let pointerDirty = false;
-        let pointerInsideCanvas = false;
-        let pointerStart = null;
-        let lastPickTime = 0;
-
-        const mouse = { x: 0, y: 0 };
-        const pendingControllers = new Set();
-
-        const byId = id => document.getElementById(id);
-
-        function debugLog(message, isError = false) {
-            const line = document.createElement('div');
-            line.textContent =
-                `[${new Date().toLocaleTimeString()}] ${message}`;
-
-            if (isError) {
-                line.classList.add('log-error');
-            }
-
-            const panel = byId('debugPanel');
-            panel.appendChild(line);
-
-            while (panel.children.length > 100) {
-                panel.firstElementChild.remove();
-            }
-
-            panel.scrollTop = panel.scrollHeight;
-
-            if (isError) {
-                console.error(message);
-            } else {
-                console.log(message);
-            }
-        }
-
-        function setStatus(message, isError = false) {
-            byId('operationStatus').textContent = message;
-            byId('operationStatus').style.color =
-                isError ? '#ff9ba8' : '';
-        }
-
-        function showFatal(message) {
-            byId('fatalError').textContent = message;
-            byId('fatalError').hidden = false;
-            debugLog(message, true);
-        }
-
-        // --------------------------------------------------
-        // HTTP helpers
-        // --------------------------------------------------
-
-        async function request(
-            path,
-            {
-                responseType = 'json',
-                timeoutMs = 120000
-            } = {}
-        ) {
-            const controller = new AbortController();
-            pendingControllers.add(controller);
-
-            const timeout = window.setTimeout(
-                () => controller.abort(),
-                timeoutMs
-            );
-
-            try {
-                const response = await fetch(`${API_BASE}${path}`, {
-                    method: 'GET',
-                    signal: controller.signal,
-                    cache: 'no-store'
-                });
-
-                if (!response.ok) {
-                    let message = `Request failed: HTTP ${response.status}`;
-
-                    try {
-                        const errorBody = await response.json();
-
-                        if (typeof errorBody.detail === 'string') {
-                            message = errorBody.detail;
-                        } else if (Array.isArray(errorBody.detail)) {
-                            message = errorBody.detail
-                                .map(item => item.msg || 'Invalid request')
-                                .join('; ');
-                        } else if (typeof errorBody.error === 'string') {
-                            message = errorBody.error;
-                        }
-                    } catch {
-                        // Retain the HTTP status if no JSON error is available.
-                    }
-
-                    throw new Error(message);
-                }
-
-                if (responseType === 'blob') {
-                    return {
-                        blob: await response.blob(),
-                        response
-                    };
-                }
-
-                const data = await response.json();
-
-                // Also support legacy endpoints that report errors with HTTP 200.
-                if (data && (data.success === false || data.error)) {
-                    throw new Error(data.error || 'Request was unsuccessful');
-                }
-
-                return data;
-
-            } catch (error) {
-                if (error.name === 'AbortError') {
-                    throw new Error(
-                        'Request timed out or was cancelled. Check the backend.'
-                    );
-                }
-                throw error;
-
-            } finally {
-                window.clearTimeout(timeout);
-                pendingControllers.delete(controller);
-            }
-        }
-
-        function setDataBusy(value) {
-            dataBusy = value;
-
-            document.querySelectorAll('[data-data-action]').forEach(button => {
-                button.disabled = value;
-            });
-        }
-
-        async function runDataAction(label, action) {
-            if (dataBusy) {
-                return;
-            }
-
-            setDataBusy(true);
-            setStatus(label);
-
-            try {
-                await action();
-            } catch (error) {
-                setStatus(error.message, true);
-                debugLog(error.message, true);
-            } finally {
-                setDataBusy(false);
-            }
-        }
-
-        // --------------------------------------------------
-        // Globe initialization
-        // --------------------------------------------------
-
-        function initializeGlobe() {
-            if (!window.THREE || !THREE.OrbitControls) {
-                throw new Error(
-                    'Three.js or OrbitControls could not load. ' +
-                    'Check your connection and CDN access.'
-                );
-            }
-
-            scene = new THREE.Scene();
-
-            camera = new THREE.PerspectiveCamera(
-                55,
-                window.innerWidth / window.innerHeight,
-                0.1,
-                1000
-            );
-            camera.position.set(0, 0, 3.1);
-
-            renderer = new THREE.WebGLRenderer({
-                canvas: byId('globeCanvas'),
-                antialias: true,
-                alpha: false
-            });
-
-            renderer.setPixelRatio(
-                Math.min(window.devicePixelRatio || 1, 2)
-            );
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.setClearColor(0x080d1c);
-            renderer.outputEncoding = THREE.sRGBEncoding;
-
-            controls = new THREE.OrbitControls(
-                camera,
-                renderer.domElement
-            );
-            controls.enableDamping = true;
-            controls.dampingFactor = 0.06;
-            controls.enablePan = false;
-            controls.minDistance = 1.4;
-            controls.maxDistance = 6;
-            controls.autoRotate = false;
-
-            const earthMaterial = new THREE.MeshPhongMaterial({
-                color: 0x34719a,
-                shininess: 8,
-                emissive: 0x07152b,
-                emissiveIntensity: 0.2
-            });
-
-            earth = new THREE.Mesh(
-                new THREE.SphereGeometry(1, 64, 64),
-                earthMaterial
-            );
-            scene.add(earth);
-
-            const textureLoader = new THREE.TextureLoader();
-
-            // A pinned example asset, rather than a moving "dev" URL.
-            textureLoader.load(
-                'https://cdn.jsdelivr.net/npm/three@0.128.0/' +
-                'examples/textures/planets/earth_atmos_2048.jpg',
-                texture => {
-                    texture.encoding = THREE.sRGBEncoding;
-                    earthMaterial.map = texture;
-                    earthMaterial.color.set(0xffffff);
-                    earthMaterial.needsUpdate = true;
-                    debugLog('Earth texture loaded');
-                },
-                undefined,
-                () => {
-                    debugLog(
-                        'Earth texture unavailable; using a plain globe.',
-                        true
-                    );
-                }
-            );
-
-            scene.add(new THREE.AmbientLight(0xffffff, 0.72));
-
-            const sunlight = new THREE.DirectionalLight(0xffffff, 0.9);
-            sunlight.position.set(4, 3, 5);
-            scene.add(sunlight);
-
-            const grid = new THREE.Mesh(
-                new THREE.SphereGeometry(1.002, 24, 12),
-                new THREE.MeshBasicMaterial({
-                    color: 0x7ab8e5,
-                    wireframe: true,
-                    transparent: true,
-                    opacity: 0.08
-                })
-            );
-            scene.add(grid);
-
-            createStars();
-            installPointerHandlers();
-
-            window.addEventListener('resize', () => {
-                camera.aspect =
-                    window.innerWidth / window.innerHeight;
-                camera.updateProjectionMatrix();
-
-                renderer.setSize(
-                    window.innerWidth,
-                    window.innerHeight
-                );
-
-                renderer.setPixelRatio(
-                    Math.min(window.devicePixelRatio || 1, 2)
-                );
-
-                pointerDirty = true;
-            });
-
-            controls.addEventListener('change', () => {
-                pointerDirty = true;
-            });
-
-            renderer.domElement.addEventListener(
-                'webglcontextlost',
-                event => {
-                    event.preventDefault();
-                    showFatal(
-                        'The browser lost its graphics context. ' +
-                        'Reload the page to restore the globe.'
-                    );
-                }
-            );
-
-            animate();
-        }
-
-        function createStars() {
-            const positions = new Float32Array(900 * 3);
-
-            for (let index = 0; index < positions.length; index += 3) {
-                const theta = Math.random() * Math.PI * 2;
-                const z = Math.random() * 2 - 1;
-                const radius = 25 + Math.random() * 35;
-                const radial = Math.sqrt(1 - z * z);
-
-                positions[index] =
-                    radius * radial * Math.cos(theta);
-                positions[index + 1] = radius * z;
-                positions[index + 2] =
-                    radius * radial * Math.sin(theta);
-            }
-
-            const geometry = new THREE.BufferGeometry();
-            geometry.setAttribute(
-                'position',
-                new THREE.BufferAttribute(positions, 3)
-            );
-
-            const material = new THREE.PointsMaterial({
-                color: 0xc5d8f5,
-                size: 0.075,
-                transparent: true,
-                opacity: 0.8
-            });
-
-            scene.add(new THREE.Points(geometry, material));
-        }
-
-        function latLngToXYZ(latitude, longitude, radius = 1.012) {
-            const phi = (90 - latitude) * Math.PI / 180;
-            const theta = (longitude + 180) * Math.PI / 180;
-
-            return new THREE.Vector3(
-                -radius * Math.sin(phi) * Math.cos(theta),
-                radius * Math.cos(phi),
-                radius * Math.sin(phi) * Math.sin(theta)
-            );
-        }
-
-        // --------------------------------------------------
-        // Marker creation and cleanup
-        // --------------------------------------------------
-
-        function validLocation(data) {
-            return (
-                typeof data.ip === 'string' &&
-                Number.isFinite(data.latitude) &&
-                Number.isFinite(data.longitude) &&
-                data.latitude >= -90 &&
-                data.latitude <= 90 &&
-                data.longitude >= -180 &&
-                data.longitude <= 180
-            );
-        }
-
-        function reputationScore(data) {
-            return (
-                Number.isFinite(data.abuseConfidence) &&
-                data.abuseConfidence >= 0 &&
-                data.abuseConfidence <= 100
-            ) ? data.abuseConfidence : null;
-        }
-
-        function markerColor(data) {
-            if (data.kind === 'sample') {
-                return 0x57bdff;
-            }
-
-            const score = reputationScore(data);
-
-            if (score === null) return 0xa7b2c8;
-            if (score >= 95) return 0xff4564;
-            if (score >= 90) return 0xff8651;
-            return 0xf5c65d;
-        }
-
-        function disposeObject(object) {
-            object.traverse(child => {
-                if (child.geometry) {
-                    child.geometry.dispose();
-                }
-
-                if (child.material) {
-                    const materials = Array.isArray(child.material)
-                        ? child.material
-                        : [child.material];
-
-                    materials.forEach(material => material.dispose());
-                }
-            });
-        }
-
-        function removeMarker(ip) {
-            const entry = markerEntries.get(ip);
-
-            if (!entry) {
-                return;
-            }
-
-            if (hoveredMesh === entry.mesh) {
-                hoveredMesh = null;
-            }
-
-            const meshIndex = selectableMeshes.indexOf(entry.mesh);
-            if (meshIndex !== -1) {
-                selectableMeshes.splice(meshIndex, 1);
-            }
-
-            scene.remove(entry.group);
-            disposeObject(entry.group);
-            markerEntries.delete(ip);
-        }
-
-        function upsertMarker(data) {
-            if (!validLocation(data)) {
-                return false;
-            }
-
-            const previous = markerEntries.get(data.ip);
-
-            // Location samples must not overwrite an actual indicator.
-            if (
-                previous &&
-                previous.data.kind === 'indicator' &&
-                data.kind === 'sample'
-            ) {
-                return false;
-            }
-
-            removeMarker(data.ip);
-
-            const color = markerColor(data);
-            const position = latLngToXYZ(
-                data.latitude,
-                data.longitude
-            );
-            const outward = position.clone().normalize();
-
-            const group = new THREE.Group();
-
-            const mesh = new THREE.Mesh(
-                new THREE.SphereGeometry(0.014, 12, 12),
-                new THREE.MeshBasicMaterial({ color })
-            );
-            mesh.position.copy(position);
-            mesh.userData = { ip: data.ip };
-            group.add(mesh);
-
-            const glow = new THREE.Mesh(
-                new THREE.SphereGeometry(0.027, 10, 10),
-                new THREE.MeshBasicMaterial({
-                    color,
-                    transparent: true,
-                    opacity: 0.25,
-                    depthWrite: false
-                })
-            );
-            glow.position.copy(position);
-            group.add(glow);
-
-            const ring = new THREE.Mesh(
-                new THREE.RingGeometry(0.022, 0.028, 24),
-                new THREE.MeshBasicMaterial({
-                    color,
-                    transparent: true,
-                    opacity: 0.45,
-                    side: THREE.DoubleSide,
-                    depthWrite: false
-                })
-            );
-
-            ring.position.copy(position);
-            ring.quaternion.setFromUnitVectors(
-                new THREE.Vector3(0, 0, 1),
-                outward
-            );
-            group.add(ring);
-
-            const beamHeight = data.kind === 'sample' ? 0.055 : 0.13;
-
-            const beam = new THREE.Mesh(
-                new THREE.CylinderGeometry(
-                    0.003,
-                    0.006,
-                    beamHeight,
-                    8
-                ),
-                new THREE.MeshBasicMaterial({
-                    color,
-                    transparent: true,
-                    opacity: 0.55,
-                    depthWrite: false
-                })
-            );
-
-            beam.position.copy(position).addScaledVector(
-                outward,
-                beamHeight / 2
-            );
-            beam.quaternion.setFromUnitVectors(
-                new THREE.Vector3(0, 1, 0),
-                outward
-            );
-            group.add(beam);
-
-            scene.add(group);
-
-            markerEntries.set(data.ip, {
-                group,
-                mesh,
-                glow,
-                ring,
-                beam,
-                data,
-                spawnTime: performance.now()
-            });
-
-            selectableMeshes.push(mesh);
-            pointerDirty = true;
-
-            if (displayedDetailsIP === data.ip) {
-                renderDetails(data);
-            }
-
-            return true;
-        }
-
-        function clearDisplay() {
-            for (const ip of [...markerEntries.keys()]) {
-                removeMarker(ip);
-            }
-
-            pinnedIP = null;
-            displayedDetailsIP = null;
-            hoveredMesh = null;
-            byId('detailsPanel').hidden = true;
-
-            updateStats();
-        }
-
-        function updateStats() {
-            const entries = [...markerEntries.values()];
-            const indicators = entries.filter(
-                entry => entry.data.kind === 'indicator'
-            );
-            const samples = entries.filter(
-                entry => entry.data.kind === 'sample'
-            );
-
-            const countries = new Set(
-                entries
-                    .map(entry => entry.data.country)
-                    .filter(country =>
-                        country &&
-                        country !== 'Unknown'
-                    )
-            );
-
-            const mlHigh = indicators.filter(entry =>
-                entry.data.ml_prediction &&
-                entry.data.ml_prediction.risk_level === 'High'
-            ).length;
-
-            byId('markerCount').textContent = entries.length;
-            byId('indicatorCount').textContent = indicators.length;
-            byId('sampleCount').textContent = samples.length;
-            byId('countryCount').textContent = countries.size;
-            byId('mlHighRisk').textContent = mlHigh;
-        }
-
-        // --------------------------------------------------
-        // Detail panel and picking
-        // --------------------------------------------------
-
-        function renderDetails(data) {
-            displayedDetailsIP = data.ip;
-            const isSample = data.kind === 'sample';
-            const score = reputationScore(data);
-            const prediction = data.ml_prediction;
-
-            byId('infoKind').textContent = isSample
-                ? 'Location sample — not a threat finding'
-                : 'Reported reputation indicator';
-
-            byId('infoIP').textContent = data.ip;
-
-            byId('infoLocation').textContent = [
-                data.city || 'Unknown',
-                data.region || 'Unknown'
-            ].join(', ');
-
-            byId('infoCountry').textContent =
-                data.country || 'Unknown';
-
-            byId('infoOrg').textContent =
-                data.org || 'Unknown';
-
-            byId('infoCoordinates').textContent =
-                `${data.latitude.toFixed(4)}, ` +
-                `${data.longitude.toFixed(4)} · approximate`;
-
-            byId('infoTimezone').textContent =
-                data.timezone || 'Not available';
-
-            byId('infoAbuse').textContent = isSample
-                ? 'Not assessed'
-                : score === null
-                    ? 'Not available'
-                    : `${score}/100`;
-
-            byId('infoObserved').textContent =
-                data.observed_at || 'Not recorded for this sample';
-
-            byId('infoMLRisk').textContent =
-                prediction
-                    ? prediction.risk_level || 'Unknown'
-                    : 'Not evaluated';
-
-            byId('infoMLConf').textContent =
-                prediction && Number.isFinite(prediction.confidence)
-                    ? `${prediction.confidence.toFixed(1)}% · experimental`
-                    : 'Not available';
-
-            byId('mlWarning').hidden = !prediction;
-            byId('detailsPanel').hidden = false;
-        }
-
-        function syncDetails() {
-            if (pinnedIP && markerEntries.has(pinnedIP)) {
-                renderDetails(markerEntries.get(pinnedIP).data);
-                return;
-            }
-
-            const hoveredIP = hoveredMesh?.userData.ip;
-
-            if (hoveredIP && markerEntries.has(hoveredIP)) {
-                renderDetails(markerEntries.get(hoveredIP).data);
-                return;
-            }
-
-            displayedDetailsIP = null;
-            byId('detailsPanel').hidden = true;
-        }
-
-        function pickMarker() {
-            if (!pointerInsideCanvas) {
-                return null;
-            }
-
-            const raycaster = new THREE.Raycaster();
-            raycaster.setFromCamera(mouse, camera);
-
-            // Include the Earth so the nearest Earth hit blocks
-            // selection of markers on the far side of the planet.
-            const intersections = raycaster.intersectObjects(
-                [earth, ...selectableMeshes],
-                false
-            );
-
-            if (!intersections.length) {
-                return null;
-            }
-
-            const nearest = intersections[0].object;
-            return nearest === earth ? null : nearest;
-        }
-
-        function updateMouse(event) {
-            const bounds = renderer.domElement.getBoundingClientRect();
-
-            mouse.x =
-                ((event.clientX - bounds.left) / bounds.width) * 2 - 1;
-            mouse.y =
-                -((event.clientY - bounds.top) / bounds.height) * 2 + 1;
-
-            pointerInsideCanvas = true;
-            pointerDirty = true;
-        }
-
-        function installPointerHandlers() {
-            const canvas = renderer.domElement;
-
-            canvas.addEventListener('pointermove', updateMouse);
-
-            canvas.addEventListener('pointerleave', () => {
-                pointerInsideCanvas = false;
-                hoveredMesh = null;
-                canvas.style.cursor = '';
-                syncDetails();
-            });
-
-            canvas.addEventListener('pointerdown', event => {
-                updateMouse(event);
-                pointerStart = {
-                    x: event.clientX,
-                    y: event.clientY
-                };
-            });
-
-            canvas.addEventListener('pointerup', event => {
-                if (!pointerStart) {
-                    return;
-                }
-
-                const moved = Math.hypot(
-                    event.clientX - pointerStart.x,
-                    event.clientY - pointerStart.y
-                );
-
-                pointerStart = null;
-
-                if (moved > 6) {
-                    return;
-                }
-
-                updateMouse(event);
-                scene.updateMatrixWorld(true);
-                camera.updateMatrixWorld(true);
-
-                const selected = pickMarker();
-                pinnedIP = selected ? selected.userData.ip : null;
-                hoveredMesh = selected;
-                syncDetails();
-            });
-
-            canvas.addEventListener('pointercancel', () => {
-                pointerStart = null;
-            });
-        }
-
-        // --------------------------------------------------
-        // Backend status and persisted statistics
-        // --------------------------------------------------
-
-        async function checkBackend() {
-            try {
-                await request('/', { timeoutMs: 10000 });
-
-                byId('connectionDot').style.background = '#56e0b2';
-                byId('connectionText').textContent = 'Backend connected';
-                debugLog('Backend connected');
-
-            } catch (error) {
-                byId('connectionDot').style.background = '#ff6577';
-                byId('connectionText').textContent =
-                    'Backend unavailable or misconfigured';
-
-                debugLog(error.message, true);
-            }
-        }
-
-        async function refreshHistoryStats() {
-            try {
-                const data = await request(
-                    '/api/observations?days=7&limit=1',
-                    { timeoutMs: 15000 }
-                );
-
-                byId('historyCount').textContent =
-                    data.statistics?.observation_count ?? '—';
-
-                byId('historyUnique').textContent =
-                    data.statistics?.unique_ips ?? '—';
-
-            } catch (error) {
-                byId('historyCount').textContent = '—';
-                byId('historyUnique').textContent = '—';
-                debugLog(`History statistics: ${error.message}`, true);
-            }
-        }
-
-        // --------------------------------------------------
-        // User actions
-        // --------------------------------------------------
-
-        async function addLocationSamples() {
-            await runDataAction('Looking up location samples…', async () => {
-                const ips = [
-                    '8.8.8.8',
-                    '1.1.1.1',
-                    '77.88.8.8',
-                    '180.76.76.76',
-                    '208.67.222.222'
-                ];
-
-                const result = await request(
-                    '/batch-geolocate?ips=' +
-                    encodeURIComponent(ips.join(','))
-                );
-
-                let added = 0;
-                let skipped = 0;
-
-                for (const item of result.results || []) {
-                    if (
-                        item.error ||
-                        !upsertMarker({
-                            ...item,
-                            kind: 'sample',
-                            abuseConfidence: null,
-                            ml_prediction: null,
-                            observed_at: null
-                        })
-                    ) {
-                        skipped++;
-                    } else {
-                        added++;
-                    }
-                }
-
-                updateStats();
-
-                setStatus(
-                    `Loaded ${added} location samples; ${skipped} skipped. ` +
-                    'Samples are not threat findings or stored observations.'
-                );
-
-                debugLog(`Location samples loaded: ${added}`);
-            });
-        }
-
-        async function collectIndicators(withML = false) {
-            await runDataAction(
-                withML
-                    ? 'Collecting indicators with experimental ML…'
-                    : 'Collecting reported indicators…',
-                async () => {
-                    const endpoint = withML
-                        ? '/fetch-attacks-ml?limit=20'
-                        : '/fetch-attacks?limit=20';
-
-                    const result = await request(endpoint);
-
-                    if (
-                        result.success !== true ||
-                        !Array.isArray(result.attacks)
-                    ) {
-                        throw new Error(
-                            result.error || 'Unexpected collection response'
-                        );
-                    }
-
-                    let plotted = 0;
-                    let missingLocation = 0;
-
-                    for (const item of result.attacks) {
-                        const record = {
-                            ...item,
-                            kind: 'indicator',
-                            observed_at:
-                                result.collection?.observed_at || null
-                        };
-
-                        if (!validLocation(record)) {
-                            missingLocation++;
-                            debugLog(
-                                `Stored ${record.ip}, but no usable map location`
-                            );
-                            continue;
-                        }
-
-                        if (upsertMarker(record)) {
-                            plotted++;
-                        }
-                    }
-
-                    updateStats();
-
-                    if (result.collection?.observed_at) {
-                        byId('lastCollection').textContent =
-                            new Date(
-                                result.collection.observed_at
-                            ).toLocaleTimeString();
-                    }
-
-                    await refreshHistoryStats();
-
-                    const message =
-                        `Collected ${result.count} reputation indicators. ` +
-                        `Updated ${plotted} markers; ` +
-                        `${missingLocation} without usable coordinates.`;
-
-                    setStatus(message);
-                    debugLog(message);
-
-                    if (result.ml_warning) {
-                        debugLog(result.ml_warning);
-                    }
-                }
-            );
-        }
-
-        async function loadStoredObservations() {
-            await runDataAction(
-                'Loading stored observations from the last seven days…',
-                async () => {
-                    const result = await request(
-                        '/api/observations?days=7&limit=5000'
-                    );
-
-                    if (!Array.isArray(result.items)) {
-                        throw new Error('Unexpected history response');
-                    }
-
-                    // The API returns newest observations first.
-                    const latestByIP = new Map();
-
-                    for (const item of result.items) {
-                        if (!latestByIP.has(item.ip)) {
-                            latestByIP.set(item.ip, item);
-                        }
-                    }
-
-                    let plotted = 0;
-
-                    for (const item of latestByIP.values()) {
-                        const record = {
-                            ip: item.ip,
-                            latitude: item.latitude,
-                            longitude: item.longitude,
-                            country: item.country,
-                            region: item.region,
-                            city: item.city,
-                            org: item.organization,
-                            abuseConfidence: item.abuse_confidence,
-                            observed_at: item.observed_at,
-                            kind: 'indicator',
-                            ml_prediction: null
-                        };
-
-                        if (upsertMarker(record)) {
-                            plotted++;
-                        }
-                    }
-
-                    updateStats();
-
-                    byId('historyCount').textContent =
-                        result.statistics?.observation_count ?? '—';
-
-                    byId('historyUnique').textContent =
-                        result.statistics?.unique_ips ?? '—';
-
-                    const capped =
-                        (result.statistics?.observation_count || 0) >
-                        result.items.length;
-
-                    const message =
-                        `Loaded ${plotted} markers from stored observations.` +
-                        (capped
-                            ? ' Display is based on the newest 5,000 rows.'
-                            : '');
-
-                    setStatus(message);
-                    debugLog(message);
-                }
-            );
-        }
-
-        async function downloadReport() {
-            if (reportBusy) {
-                return;
-            }
-
-            const days = Number(byId('reportDays').value);
-
-            if (!Number.isInteger(days) || days < 1 || days > 90) {
-                setStatus('Choose a whole number from 1 to 90 days.', true);
-                return;
-            }
-
-            reportBusy = true;
-            byId('reportBtn').disabled = true;
-            byId('reportDays').disabled = true;
-            setStatus(`Preparing the ${days}-day workbook…`);
-
-            try {
-                const { blob, response } = await request(
-                    `/api/reports/weekly.xlsx?days=${days}`,
-                    {
-                        responseType: 'blob',
-                        timeoutMs: 120000
-                    }
-                );
-
-                const disposition =
-                    response.headers.get('Content-Disposition') || '';
-
-                const filenameMatch =
-                    disposition.match(/filename="([^"]+)"/i);
-
-                const filename = filenameMatch
-                    ? filenameMatch[1]
-                    : `intelligence-report-${days}-days.xlsx`;
-
-                const objectURL = URL.createObjectURL(blob);
-                const link = document.createElement('a');
-
-                link.href = objectURL;
-                link.download = filename;
-                document.body.appendChild(link);
-                link.click();
-                link.remove();
-
-                window.setTimeout(
-                    () => URL.revokeObjectURL(objectURL),
-                    60000
-                );
-
-                setStatus(
-                    'Workbook download started. It contains stored ' +
-                    'observations, not reconstructed historical attacks.'
-                );
-                debugLog(`Workbook downloaded: ${filename}`);
-
-            } catch (error) {
-                setStatus(error.message, true);
-                debugLog(`Report: ${error.message}`, true);
-
-            } finally {
-                reportBusy = false;
-                byId('reportBtn').disabled = false;
-                byId('reportDays').disabled = false;
-            }
-        }
-
-        function toggleAutoRefresh() {
-            if (autoRefreshTimer !== null) {
-                window.clearInterval(autoRefreshTimer);
-                autoRefreshTimer = null;
-
-                byId('autoRefreshBtn').textContent =
-                    'Start Auto-Refresh · 5 min';
-                byId('autoRefreshBtn').classList.remove('active');
-
-                setStatus('Auto-refresh stopped.');
-                debugLog('Auto-refresh stopped');
-                return;
-            }
-
-            autoRefreshTimer = window.setInterval(() => {
-                if (!dataBusy) {
-                    collectIndicators(false);
-                } else {
-                    debugLog(
-                        'Auto-refresh skipped: another data operation is running'
-                    );
-                }
-            }, AUTO_REFRESH_MS);
-
-            byId('autoRefreshBtn').textContent =
-                'Stop Auto-Refresh · 5 min';
-            byId('autoRefreshBtn').classList.add('active');
-
-            setStatus(
-                'Auto-refresh enabled. Next collection in five minutes. ' +
-                'Closing this page stops browser-driven collection.'
-            );
-
-            debugLog('Auto-refresh enabled: five-minute interval');
-        }
-
-        // --------------------------------------------------
-        // Animation
-        // --------------------------------------------------
-
-        let frameCount = 0;
-        let lastFPSUpdate = performance.now();
-
-        function animate(now = performance.now()) {
-            requestAnimationFrame(animate);
-
-            controls.update();
-
-            for (const entry of markerEntries.values()) {
-                const seconds = (now - entry.spawnTime) / 1000;
-                const phase = (seconds % 2) / 2;
-
-                entry.glow.scale.setScalar(
-                    1 + Math.sin(seconds * 3) * 0.15
-                );
-
-                entry.ring.scale.setScalar(1 + phase * 2);
-                entry.ring.material.opacity = 0.45 * (1 - phase);
-
-                entry.beam.material.opacity =
-                    0.45 + Math.sin(seconds * 3) * 0.12;
-            }
-
-            scene.updateMatrixWorld(true);
-            camera.updateMatrixWorld(true);
-
-            if (pointerDirty && now - lastPickTime > 60) {
-                hoveredMesh = pickMarker();
-                renderer.domElement.style.cursor =
-                    hoveredMesh ? 'pointer' : '';
-
-                syncDetails();
-                pointerDirty = false;
-                lastPickTime = now;
-            }
-
-            // Earth and markers share the same stationary coordinates.
-            // Users rotate the camera with OrbitControls.
-            renderer.render(scene, camera);
-
-            frameCount++;
-
-            if (now - lastFPSUpdate >= 1000) {
-                const elapsed = now - lastFPSUpdate;
-                byId('fps').textContent = Math.round(
-                    frameCount * 1000 / elapsed
-                );
-
-                frameCount = 0;
-                lastFPSUpdate = now;
-            }
-        }
-
-        // --------------------------------------------------
-        // Startup
-        // --------------------------------------------------
-
-        function installButtons() {
-            byId('samplesBtn').addEventListener(
-                'click',
-                addLocationSamples
-            );
-
-            byId('fetchBtn').addEventListener(
-                'click',
-                () => collectIndicators(false)
-            );
-
-            byId('mlBtn').addEventListener(
-                'click',
-                () => collectIndicators(true)
-            );
-
-            byId('historyBtn').addEventListener(
-                'click',
-                loadStoredObservations
-            );
-
-            byId('autoRefreshBtn').addEventListener(
-                'click',
-                toggleAutoRefresh
-            );
-
-            byId('clearBtn').addEventListener('click', () => {
-                clearDisplay();
-                setStatus(
-                    'Display cleared. Stored history has not been deleted.'
-                );
-                debugLog('Display cleared; database unchanged');
-            });
-
-            byId('reportBtn').addEventListener(
-                'click',
-                downloadReport
-            );
-
-            byId('closeDetailsBtn').addEventListener('click', () => {
-                pinnedIP = null;
-                hoveredMesh = null;
-                displayedDetailsIP = null;
-                byId('detailsPanel').hidden = true;
-            });
-        }
-
-        async function start() {
-            if (!['http:', 'https:'].includes(window.location.protocol)) {
-                showFatal(
-                    'Open this website through FastAPI: ' +
-                    'http://127.0.0.1:8000/globe . ' +
-                    'Do not open globe.html directly from File Explorer.'
-                );
-                return;
-            }
-
-            try {
-                initializeGlobe();
-                installButtons();
-
-                debugLog('Globe initialized; no indicators auto-loaded');
-
-                await checkBackend();
-                await refreshHistoryStats();
-
-            } catch (error) {
-                showFatal(`Initialization failed: ${error.message}`);
-            }
-        }
-
-        window.addEventListener('pagehide', () => {
-            if (autoRefreshTimer !== null) {
-                window.clearInterval(autoRefreshTimer);
-            }
-
-            for (const controller of pendingControllers) {
-                controller.abort();
-            }
-        });
-
-        start();
-    </script>
 </body>
 </html>
