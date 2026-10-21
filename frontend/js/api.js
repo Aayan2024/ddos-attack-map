@@ -85,7 +85,7 @@ export async function request(
 }
 
 export function getHealth() {
-    return request('/', { timeoutMs: 10000 });
+    return request('/health', { timeoutMs: 10000 });
 }
 
 export function getLocationSamples() {
